@@ -1,0 +1,32 @@
+#%RAML 1.0
+title: vilit-mule-03API
+version: 1.0
+
+/register:
+  post:
+    body:
+       application/json:     
+        example: |
+          {"USERNAME": "ER38sd","PASSWORD": "123456","EMAIL":"906597945@qq.com"}
+
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {"message": "register success"}
+
+/login:
+  post:
+    body:
+      application/x-www-form-urlencoded:    
+        example: |
+          {"USERNAME": "ER38sd","PASSWORD": "ER38sd"}
+          
+
+    responses:
+      200:
+        body:
+          application/x-www-form-urlencoded:  
+            example: |
+              {"message": "Login success"}
