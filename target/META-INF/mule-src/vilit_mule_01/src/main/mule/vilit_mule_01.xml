@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:email="http://www.mulesoft.org/schema/mule/email"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/email/current/mule-email.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="09d3058c-f3b3-4381-b88f-c81cb3f06ee6" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="b150e76f-4282-4d77-a772-81fd93bda192" >
+		<db:oracle-connection host="localhost" user="scott" password="1234" instance="orcl" />
+	</db:config>
+	<email:smtp-config name="Email_SMTP" doc:name="Email SMTP" doc:id="6ec08ac0-20c9-435c-bd1a-b7cab14f6ee3" >
+		<email:smtp-connection host="smtp.163.com" user="vilitwu@163.com" password="1234567Ww" />
+	</email:smtp-config>
+	<apikit:config outboundHeadersMapName="outboundHeadersMapName" httpStatusVarName="httpStatus" doc:name="Router" doc:id="d0a2cbae-3957-4e7c-ac72-e39e07b4607c" name="Router" raml="vilit_mule_01API.raml" >
+		<apikit:flow-mappings >
+			<apikit:flow-mapping resource="/register" action="post" content-type="application/json" flow-ref="vilit-register-Flow" />
+			<apikit:flow-mapping resource="/login" action="post" content-type="application/x-www-form-urlencoded" flow-ref="vilit-login-Flow" />
+		</apikit:flow-mappings>
+	</apikit:config>
+	<flow name="vilit_mule_01Flow" doc:id="374ecbb1-479a-4e42-94b1-934eb3ca4b30" >
+		<http:listener doc:name="Listener" doc:id="11e1e82e-e3f3-4e5e-8cd7-92a0f8d99f33" config-ref="HTTP_Listener_config" path="/api/*">
+			<http:response >
+				<http:headers ><![CDATA[#[output application/java
+---
+{
+	"Access-Control-Allow-Origin" : "*",
+	"content-type" : "application/x-www-form-urlencoded"
+}]]]></http:headers>
+			</http:response>
+			<http:error-response >
+				<http:body ><![CDATA[#[output text/plain var error = ???
+--- error.description]]]></http:body>
+			</http:error-response>
+		</http:listener>
+		<apikit:router doc:name="APIkit Router" doc:id="0da9c3d3-b62c-4ca8-820f-b9942d9ee80d" config-ref="Router"/>
+	</flow>
+	<flow name="vilit-register-Flow" doc:id="406525a9-f14b-40a2-b858-338d96397154" >
+		<set-variable value="message.payload.USERNAME" doc:name="Set Variable" doc:id="bb517103-c7c4-40db-91e6-9294920fb7cc" variableName="USERNAME"/>
+		<set-variable value="message.payload.PASSWORD" doc:name="Set Variable" doc:id="d682a59c-bf26-462e-8c45-0ca061c2b342" variableName="PASSWORD"/>
+		<set-variable value="message.payload.EMAIL" doc:name="Set Variable" doc:id="e26ef959-eb86-41e4-8023-9317b5a427ce" variableName="EMAIL"/>
+		<logger level="INFO" doc:name="Logger" doc:id="56512e7a-0a96-4fe5-9e55-537a8dd5a440" message="#[vars]"/>
+		<db:select doc:id="7cdb6bab-0e77-4c01-83db-813d74af6718" config-ref="Database_Config">
+			<db:sql >select * from &quot;SCOTT&quot;.&quot;USERS&quot; WHERE EMAIL=:EMAIL</db:sql>
+			<db:input-parameters ><![CDATA[#[{EMAIL:vars.EMAIL}]]]></db:input-parameters>
+		</db:select>
+		<choice doc:name="Choice" doc:id="670729f2-2fc2-4483-965f-6dc2a2eb45dd" >
+			<when expression="#[sizeOf(payload) &gt; 0]">
+				<logger level="INFO" doc:name="Logger" doc:id="ba83a0a1-3f1e-46da-8e23-15d105341498" message="#[payload]"/>
+				<set-payload value='"The mailbox has been registered."' doc:name="Set Payload" doc:id="ea2e5a50-6c46-486a-aec9-4368341bdf92" />
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="Logger" doc:id="97bb0a03-51bc-4c89-a29c-308605dbe019" message="#[payload]"/>
+				<db:insert doc:name="Insert" doc:id="1ef18aff-8785-4813-874e-0494d59081ac" config-ref="Database_Config">
+					<db:sql >INSERT INTO &quot;SCOTT&quot;.&quot;USERS&quot; (USERNAME, PASSWORD, EMAIL) VALUES (:USERNAME,:PASSWORD,:EMAIL )</db:sql>
+					<db:input-parameters ><![CDATA[#[{USERNAME:vars.USERNAME,PASSWORD:vars.PASSWORD,EMAIL:vars.EMAIL}]]]></db:input-parameters>
+				</db:insert>
+				<choice doc:name="Choice" doc:id="67fbcac5-2465-4077-950a-c60c3cb4d761" >
+					<when expression="#[sizeOf(payload) &gt; 0]">
+						<logger level="INFO" doc:name="Logger" doc:id="1c1faedc-89de-4937-8842-ef2a739207d0" message="#[payload]"/>
+						<set-payload value='"register success"' doc:name="Set Payload" doc:id="3502d54f-d210-4334-9959-55d689cf35f2" />
+						<email:send doc:name="Send" doc:id="f63a99c5-083e-44b5-a5fb-3aa7a5ca88bd" config-ref="Email_SMTP" fromAddress="vilitwu@163.com" subject='"welcome to mule"'>
+							<email:to-addresses >
+								<email:to-address value="#[vars.EMAIL]" />
+							</email:to-addresses>
+							<email:cc-addresses >
+								<email:cc-address value="vilitwu@163.com" />
+							</email:cc-addresses>
+							<email:body contentType="text/plain" encoding="UTF-8" >
+								<email:content ><![CDATA[#["register success"]]]></email:content>
+							</email:body>
+						</email:send>
+					</when>
+					<otherwise >
+						<logger level="INFO" doc:name="Logger" doc:id="8530aaa7-7622-460a-8145-c12921685d8a" message="#[payload]"/>
+						<set-payload value='"unexpected error occured"' doc:name="Set Payload" doc:id="e4bd1319-58c2-434a-a099-8ce9d38ccf4f" />
+					</otherwise>
+				</choice>
+			</otherwise>
+		</choice>
+		<logger level="INFO" doc:name="Logger" doc:id="68d9589f-08fc-4f22-90e4-0ece67caf231" message="#[payload]"/>
+	</flow>
+	<flow name="vilit-login-Flow" doc:id="f9fe3679-59b8-4746-b157-aeb6a4b4f9c5" >
+		<set-variable value="message.payload.USERNAME" doc:name="Set Variable" doc:id="a74db15d-a17b-4710-b1d5-8cdcb592a844" variableName="USERNAME"/>
+		<set-variable value="message.payload.PASSWORD" doc:name="Set Variable" doc:id="0cfbfe1a-29db-4bb5-aec4-28b511c941f2" variableName="PASSWORD"/>
+		<logger level="INFO" doc:name="Logger" doc:id="4bf969a3-8b55-4e70-a00c-bdce5b02ee04" message="#[vars]"/>
+		<db:select doc:name="Select" doc:id="84a2654b-349f-4024-9245-c28c990bb894" config-ref="Database_Config">
+			<db:sql >select * from &quot;SCOTT&quot;.&quot;USERS&quot; WHERE USERNAME=:USERNAME AND PASSWORD=:PASSWORD</db:sql>
+			<db:input-parameters ><![CDATA[#[{USERNAME:vars.USERNAME,PASSWORD:vars.PASSWORD}]]]></db:input-parameters>
+		</db:select>
+		<choice doc:name="Choice" doc:id="0a1032ed-0ad2-4abf-af94-c5f41b6dd7af" >
+			<when expression="#[sizeOf(payload) &gt; 0]">
+				<logger level="INFO" doc:name="Logger" doc:id="6d01a6cc-da94-4829-ad13-4ec60f50028b" message="#[payload]"/>
+				<ee:transform doc:name="Transform Message" doc:id="eaa8a69d-1b87-43e4-b78a-e75c221d40fe" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	id:payload.ID,
+	username:payload.USERNAME,
+	password:payload.PASSWORD,
+	EMAIL:payload.EMAIL,
+	ROLE:payload.ROLE
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="Logger" doc:id="1772fafa-6488-4481-a7dd-c6aff598bca0" message="#[payload]"/>
+				<set-payload value='"Invalid username or password"' doc:name="Set Payload" doc:id="0b05b47e-f160-42c7-a021-294423288d20" />
+			</otherwise>
+		</choice>
+		<logger level="INFO" doc:name="Logger" doc:id="9412b0a6-5fa4-4493-877f-df9fbf77a66e" message="#[payload]"/>
+	</flow>
+</mule>
