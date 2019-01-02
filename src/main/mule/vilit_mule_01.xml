@@ -29,8 +29,8 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
 				<http:headers ><![CDATA[#[output application/java
 ---
 {
-	"Access-Control-Allow-Origin" : "*",
-	"content-type" : "application/x-www-form-urlencoded"
+	"content-type" : "application/x-www-form-urlencoded",
+	"Access-Control-Allow-Origin" : "*"
 }]]]></http:headers>
 			</http:response>
 			<http:error-response >
@@ -41,9 +41,9 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
 		<apikit:router doc:name="APIkit Router" doc:id="0da9c3d3-b62c-4ca8-820f-b9942d9ee80d" config-ref="Router"/>
 	</flow>
 	<flow name="vilit-register-Flow" doc:id="406525a9-f14b-40a2-b858-338d96397154" >
-		<set-variable value="message.payload.USERNAME" doc:name="Set Variable" doc:id="bb517103-c7c4-40db-91e6-9294920fb7cc" variableName="USERNAME"/>
-		<set-variable value="message.payload.PASSWORD" doc:name="Set Variable" doc:id="d682a59c-bf26-462e-8c45-0ca061c2b342" variableName="PASSWORD"/>
-		<set-variable value="message.payload.EMAIL" doc:name="Set Variable" doc:id="e26ef959-eb86-41e4-8023-9317b5a427ce" variableName="EMAIL"/>
+		<set-variable value="#[message.payload.USERNAME]" doc:name="Set Variable" doc:id="bb517103-c7c4-40db-91e6-9294920fb7cc" variableName="USERNAME"/>
+		<set-variable value="#[message.payload.PASSWORD]" doc:name="Set Variable" doc:id="d682a59c-bf26-462e-8c45-0ca061c2b342" variableName="PASSWORD"/>
+		<set-variable value="#[message.payload.EMAIL]" doc:name="Set Variable" doc:id="e26ef959-eb86-41e4-8023-9317b5a427ce" variableName="EMAIL"/>
 		<logger level="INFO" doc:name="Logger" doc:id="56512e7a-0a96-4fe5-9e55-537a8dd5a440" message="#[vars]"/>
 		<db:select doc:id="7cdb6bab-0e77-4c01-83db-813d74af6718" config-ref="Database_Config">
 			<db:sql >select * from &quot;SCOTT&quot;.&quot;USERS&quot; WHERE EMAIL=:EMAIL</db:sql>
@@ -86,8 +86,8 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
 		<logger level="INFO" doc:name="Logger" doc:id="68d9589f-08fc-4f22-90e4-0ece67caf231" message="#[payload]"/>
 	</flow>
 	<flow name="vilit-login-Flow" doc:id="f9fe3679-59b8-4746-b157-aeb6a4b4f9c5" >
-		<set-variable value="message.payload.USERNAME" doc:name="Set Variable" doc:id="a74db15d-a17b-4710-b1d5-8cdcb592a844" variableName="USERNAME"/>
-		<set-variable value="message.payload.PASSWORD" doc:name="Set Variable" doc:id="0cfbfe1a-29db-4bb5-aec4-28b511c941f2" variableName="PASSWORD"/>
+		<set-variable value="#[message.payload.username]" doc:name="Set Variable" doc:id="a74db15d-a17b-4710-b1d5-8cdcb592a844" variableName="USERNAME"/>
+		<set-variable value="#[message.payload.password]" doc:name="Set Variable" doc:id="0cfbfe1a-29db-4bb5-aec4-28b511c941f2" variableName="PASSWORD"/>
 		<logger level="INFO" doc:name="Logger" doc:id="4bf969a3-8b55-4e70-a00c-bdce5b02ee04" message="#[vars]"/>
 		<db:select doc:name="Select" doc:id="84a2654b-349f-4024-9245-c28c990bb894" config-ref="Database_Config">
 			<db:sql >select * from &quot;SCOTT&quot;.&quot;USERS&quot; WHERE USERNAME=:USERNAME AND PASSWORD=:PASSWORD</db:sql>
